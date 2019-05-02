@@ -19,3 +19,4 @@
 
 - debug:
     var: "lifecycle_ids"
+    verbosity: "1"
