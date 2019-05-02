@@ -33,6 +33,7 @@
   tags:
     - "content_view_id"
 
+# TODO:
 # - name: "Create content view"
 #   block:
 #
@@ -125,11 +126,18 @@
       tags:
         - "content_view_version_id"
 
-    - name: "Promote content view to lifecycle environments"
-      include_tasks: "promote_to_lifecycle.yml"
+    - name: "Set lifecycle environment id list"
+      set_fact:
+        lifecycle_ids: []
+
+    - name: "Build lifecycle environment id list"
+      include_tasks: "build_promotion_list.yml"
       with_items: "{{ cv.promote_to }}"
       loop_control:
         loop_var: "lifecycle"
+
+    - name: "Promote content view to lifecycle environments"
+      include_tasks: "promote_to_lifecycle.yml"
   tags:
     - "promote_cv_to_lifecycle"
   when: "cv.promote_to | default('[]') | length > 0"

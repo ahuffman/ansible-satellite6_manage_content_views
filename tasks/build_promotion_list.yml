@@ -1,0 +1,21 @@
+---
+- name: "Clear lifecycle id"
+  set_fact:
+    lifecycle_id: ""
+
+- debug:
+    var: "lifecycle"
+    verbosity: "1"
+
+- name: "Set lifecycle ID"
+  set_fact:
+    lifecycle_id: "[{{ lifecycle_qry.json | json_query(jq) | join('') }}]"
+  vars:
+    jq: "results[?name==`{{ lifecycle }}`].id"
+
+- name: "Add lifecycle_id to lifecycle_ids list"
+  set_fact:
+    lifecycle_ids: "{{ lifecycle_ids | union(lifecycle_id) }}"
+
+- debug:
+    var: "lifecycle_ids"
