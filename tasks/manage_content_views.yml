@@ -132,4 +132,4 @@
         loop_var: "lifecycle"
   tags:
     - "promote_cv_to_lifecycle"
-  when: "cv.promote_to | length > 0"
+  when: "cv.promote_to | default('[]') | length > 0"
