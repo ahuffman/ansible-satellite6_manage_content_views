@@ -99,7 +99,7 @@
         var: "lifecycle_qry"
         verbosity: "1"
 
-    - name: "Obtain content view version ID"
+    - name: "Obtain content view facts"
       block:
         - name: "Obtain content view Version ID"
           uri:
@@ -116,15 +116,30 @@
 
         - name: "Set content view facts"
           set_fact:
-            content_view_version_id: "{{ cv_ver_qry.json.results[0] | json_query(jq) | sort(reverse=True) }}"
+            content_view_version_id: "{{ cv_ver_qry.json.results[0] | json_query(cv_id_jq) | max }}"
           vars:
-            jq: "versions[*].id"
+            cv_id_jq: "versions[*].id"
+
+        - name: "Set {{ cv.name }} latest version promotion list"
+          set_fact:
+            content_view_environment_ids: "{{ cv_ver_qry.json.results[0] | json_query(cv_env_ids_jq) | flatten }}"
+          vars:
+            cv_env_ids_jq: "versions[?id==`{{ content_view_version_id }}`].environment_ids"
 
         - debug:
-            var: "content_view_version_id[0]"
+            var: "content_view_version_id"
+            verbosity: "1"
+
+        - name: "Clean Library from content_view_environment_ids"
+          set_fact:
+            content_view_environment_ids: "{{ content_view_environment_ids | difference([1]) }}"
+          when: "1 in content_view_environment_ids"
+
+        - debug:
+            var: "content_view_environment_ids"
             verbosity: "1"
       tags:
-        - "content_view_version_id"
+        - "content_view_facts"
 
     - name: "Set lifecycle environment id list"
       set_fact:
@@ -135,9 +150,25 @@
       with_items: "{{ cv.promote_to }}"
       loop_control:
         loop_var: "lifecycle"
+        label: "{{ lifecycle }}"
+
+    - debug:
+        var: "lifecycle_ids | difference(content_view_environment_ids) | length"
+        verbosity: "1"
 
     - name: "Promote content view to lifecycle environments"
       include_tasks: "promote_to_lifecycle.yml"
+      when: "lifecycle_ids | difference(content_view_environment_ids) | length > 0"
+
+    - debug:
+        msg:
+          - "Not attempting to promote {{ cv.name }}."
+          - "The current content view version (id: {{ content_view_version_id }}) has already been promoted to {{ lifecycles }}."
+      when: "lifecycle_ids | difference(content_view_environment_ids) | length < 1"
+      vars:
+        lifecycles: "{{ cv.promote_to | join(', ') }}"
+
   tags:
     - "promote_cv_to_lifecycle"
-  when: "cv.promote_to | default('[]') | length > 0"
+  when:
+    - "cv.promote_to | default('[]') | length > 0"

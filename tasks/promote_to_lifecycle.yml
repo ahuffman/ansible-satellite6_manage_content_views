@@ -3,14 +3,14 @@
   uri:
     method: "POST"
     status_code: "202"
-    body: "{\"id\": \"{{ content_view_version_id[0] }}\",
+    body: "{\"id\": \"{{ content_view_version_id }}\",
             \"force\": \"{{ cv.promote_bypass_environment_path | default(False) }}\",
-            \"environment_ids\": {{ lifecycle_ids | to_json }},
+            \"environment_ids\": {{ lifecycle_ids | difference(content_view_environment_ids) | to_json }},
             \"description\": \"{{ cv.promote_description | default('') }}\",
             \"force_yum_metadata_regeneration\": \"{{ cv.promote_force_yum_metadata_regeneration | default(False) }}\"
           }"
   vars:
-    sat6_url_path: "katello/api/content_view_versions/{{ content_view_version_id[0] }}/promote"
+    sat6_url_path: "katello/api/content_view_versions/{{ content_view_version_id }}/promote"
     lifecycles: "{{ cv.promote_to | join(', ') }}"
   register: "cv_promote"
 
