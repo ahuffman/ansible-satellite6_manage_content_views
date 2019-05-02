@@ -1,0 +1,135 @@
+---
+- name: "Clear facts"
+  set_fact:
+    content_view_id: ""
+    content_view_composite: ""
+
+- name: "Obtain content view ID"
+  block:
+    - name: "Obtain content view ID"
+      uri:
+        body: "{\"search\": 'name=\"{{ cv.name }}\"', \"organization_id\": \"{{ organization_id }}\"}"
+      register: "cv_qry"
+      vars:
+        sat6_url_path: "katello/api/content_views"
+
+    - debug:
+        var: "cv_qry.json.results[0]"
+        verbosity: "1"
+
+    - name: "Set content view facts"
+      set_fact:
+        content_view_id: "{{ cv_qry.json.results[0].id }}"
+        content_view_composite: "{{ cv_qry.json.results[0].composite | bool }}"
+      when: 'cv.name == cv_qry.json.results[0].name'
+
+    - debug:
+        var: "content_view_id"
+        verbosity: "1"
+
+    - debug:
+        var: "content_view_composite"
+        verbosity: "1"
+  tags:
+    - "content_view_id"
+
+# - name: "Create content view"
+#   block:
+#
+#   when:
+#     - 'content_view_id == ""'
+#     - 'cv.create_on_missing | default(False)'
+
+- name: "Publish new content view version"
+  block:
+    - name: "Initiate publishing new content view version of {{ cv.name }}"
+      uri:
+        method: "POST"
+        status_code: "202"
+        body: "{\"description\": \"{{ cv.publish_description | default('') }}\",
+                \"force_yum_metadata_regeneration\": \"{{ cv.publish_force_yum_metadata_regeneration | default(False) }}\"
+              }"
+      vars:
+        sat6_url_path: "katello/api/content_views/{{ content_view_id }}/publish"
+      register: "cv_publish"
+
+    - debug:
+        var: "cv_publish.json"
+        verbosity: "1"
+
+    - name: "Check {{ cv.name }} content view publish status"
+      uri:
+        body: "{\"id\": \"{{ cv_publish.json.id }}\"}"
+      register: "cv_publish_qry"
+      vars:
+        sat6_url_path: "foreman_tasks/api/tasks/{{ cv_publish.json.id }}"
+      until:
+        - "cv_publish_qry.json.state == 'stopped'"
+        - "not cv_publish_qry.json.pending | bool"
+        - "cv_publish_qry.json.progress | string == '1.0'"
+        - "cv_publish_qry.json.result == 'success'"
+      changed_when: "cv_publish_qry.json.result == 'success'"
+      failed_when:
+        - "cv_publish_qry.json.state == 'paused'"
+        - "cv_publish_qry.json.result == 'error'"
+      retries: "240"
+      delay: "30"
+
+    - debug:
+        var: "cv_publish_qry.json"
+        verbosity: "1"
+  when:
+    - "cv.publish_new_version | default(False)"
+    - "not content_view_composite"
+    - "content_view_id != ''"
+  tags:
+    - "publish_content_view"
+
+- name: "Lifecycle environments"
+  block:
+    - name: "Obtain lifecycle environments"
+      uri:
+        body: "{\"per_page\": \"1000\"}"
+      register: "lifecycle_qry"
+      vars:
+        sat6_url_path: "katello/api/environments"
+
+    - debug:
+        var: "lifecycle_qry"
+        verbosity: "1"
+
+    - name: "Obtain content view version ID"
+      block:
+        - name: "Obtain content view Version ID"
+          uri:
+            body: "{\"search\": 'name=\"{{ cv.name }}\"',
+                    \"organization_id\": \"{{ organization_id }}\"
+                  }"
+          register: "cv_ver_qry"
+          vars:
+            sat6_url_path: "katello/api/content_views"
+
+        - debug:
+            var: "cv_ver_qry.json.results[0]"
+            verbosity: "1"
+
+        - name: "Set content view facts"
+          set_fact:
+            content_view_version_id: "{{ cv_ver_qry.json.results[0] | json_query(jq) | sort(reverse=True) }}"
+          vars:
+            jq: "versions[*].id"
+
+        - debug:
+            var: "content_view_version_id[0]"
+            verbosity: "1"
+      tags:
+        - "content_view_version_id"
+
+    - name: "Promote content view to lifecycle environments"
+      include_tasks: "promote_to_lifecycle.yml"
+      with_items: "{{ cv.promote_to }}"
+      loop_control:
+        loop_var: "lifecycle"
+  tags:
+    - "promote_cv_to_lifecycle"
+  when: "cv.promote_to | length > 0"

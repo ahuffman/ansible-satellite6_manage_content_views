@@ -1,0 +1,53 @@
+---
+- name: "Clear lifecycle ID"
+  set_fact:
+    lifecycle_id: ""
+
+- debug:
+    var: "lifecycle"
+    verbosity: "1"
+
+- name: "Set lifecycle ID"
+  set_fact:
+    lifecycle_id: "{{ lifecycle_qry.json | json_query(jq) | join('') }}"
+  vars:
+    jq: "results[?name==`{{ lifecycle }}`].id"
+
+- debug:
+    var: "lifecycle_id"
+
+- name: "Initiate promotion of {{ cv.name }} to {{ lifecycle }}"
+  uri:
+    method: "POST"
+    status_code: "202"
+    body: "{\"id\": \"{{ content_view_version_id[0] }}\",
+            \"force\": \"{{ cv.promote_bypass_environment_path | default(False) }}\",
+            \"environment_id\": \"{{ lifecycle_id }}\",
+            \"description\": \"{{ cv.promote_description | default('') }}\",
+            \"force_yum_metadata_regeneration\": \"{{ cv.promote_force_yum_metadata_regeneration | default(False) }}\"
+          }"
+  vars:
+    sat6_url_path: "katello/api/content_view_versions/{{ content_view_version_id[0] }}/promote"
+  register: "cv_promote"
+
+- name: "Check {{ cv.name }} content view promotion status to {{ lifecycle }}"
+  uri:
+    body: "{\"id\": \"{{ cv_promote.json.id }}\"}"
+  register: "cv_promote_qry"
+  vars:
+    sat6_url_path: "foreman_tasks/api/tasks/{{ cv_promote.json.id }}"
+  until:
+    - "cv_promote_qry.json.state == 'stopped'"
+    - "not cv_promote_qry.json.pending | bool"
+    - "cv_promote_qry.json.progress | string == '1.0'"
+    - "cv_promote_qry.json.result == 'success'"
+  changed_when: "cv_promote_qry.json.result == 'success'"
+  failed_when:
+    - "cv_promote_qry.json.state == 'paused'"
+    - "cv_promote_qry.json.result == 'error'"
+  retries: "240"
+  delay: "30"
+
+- debug:
+    var: "cv_promote_qry.json"
+    verbosity: "1"
