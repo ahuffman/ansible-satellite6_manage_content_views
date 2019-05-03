@@ -1,6 +1,6 @@
 # ahuffman.satellite6_manage_content_views
 
-***Work in progess***
+***Work in progess***  
 An Ansible role to manage creation, publishing, promotion, and deletion of Satellite6 content views.
 
 ## Role Variables
@@ -21,7 +21,7 @@ An Ansible role to manage creation, publishing, promotion, and deletion of Satel
 | publish_new_version | no | Publishes a new content view version if `True`. | False | boolean |
 | publish_description | no | Description of content view changes during publishing of a new version | "" | string |
 | publish_force_yum_metadata_regeneration | no | Whether or not to force yum metadata regeneration while publishing a new content view version | False | boolean |
-| promote_to | no | List of lifecycle environment/paths to promote the content view to | [] | list |
+| promote_to | no | List of lifecycle environment/paths to promote the content view to.  We will skip any listed environments where the content view has already been promoted.| [] | list |
 | promote_description | no | Description of content view promotion changes during promotion of a content view. | "" | string |
 | promote_force_yum_metadata_regeneration | no | Whether or not to force yum metadata regeneration while promoting a content view to a lifecycle environment/path. | False | boolean |
 | promote_bypass_environment_path | no | Force promotion to a lifecycle environment/path outside of normal path restrictions (i.e. skip previous paths/environments) | False | boolean |
