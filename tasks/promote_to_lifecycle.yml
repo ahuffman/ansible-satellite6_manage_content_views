@@ -1,17 +1,33 @@
 ---
+- name: "Set promotion_diff"
+  set_fact:
+    promotion_diff: "{{ lifecycle_ids | difference(content_view_environment_ids) }}"
+
+# For pretty task name
+- name: "Set promotion_names"
+  set_fact:
+    promotion_names: "{{ lifecycle_dicts | json_query(jq) | union(promotion_names | default([])) }}"
+  with_items: "{{ promotion_diff }}"
+  vars:
+    jq: "[?id==`{{ item }}`].name"
+
+- debug:
+    var: "promotion_names"
+    verbosity: "1"
+
 - name: "Initiate promotion of {{ cv.name }} to {{ lifecycles }}"
   uri:
     method: "POST"
     status_code: "202"
     body: "{\"id\": \"{{ content_view_version_id }}\",
             \"force\": \"{{ cv.promote_bypass_environment_path | default(False) }}\",
-            \"environment_ids\": {{ lifecycle_ids | difference(content_view_environment_ids) | to_json }},
+            \"environment_ids\": {{ promotion_diff | to_json }},
             \"description\": \"{{ cv.promote_description | default('') }}\",
             \"force_yum_metadata_regeneration\": \"{{ cv.promote_force_yum_metadata_regeneration | default(False) }}\"
           }"
   vars:
     sat6_url_path: "katello/api/content_view_versions/{{ content_view_version_id }}/promote"
-    lifecycles: "{{ cv.promote_to | join(', ') }}"
+    lifecycles: "{{ promotion_names | join(', ') }}"
   register: "cv_promote"
 
 - name: "Check {{ cv.name }} content view promotion status to {{ lifecycles }}"
@@ -20,7 +36,7 @@
   register: "cv_promote_qry"
   vars:
     sat6_url_path: "foreman_tasks/api/tasks/{{ cv_promote.json.id }}"
-    lifecycles: "{{ cv.promote_to | join(', ') }}"
+    lifecycles: "{{ promotion_names | join(', ') }}"
   until:
     - "cv_promote_qry.json.state == 'stopped'"
     - "not cv_promote_qry.json.pending | bool"

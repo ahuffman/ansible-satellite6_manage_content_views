@@ -144,6 +144,7 @@
     - name: "Set lifecycle environment id list"
       set_fact:
         lifecycle_ids: []
+        lifecycle_dicts: []
 
     - name: "Build lifecycle environment id list"
       include_tasks: "build_promotion_list.yml"
@@ -153,7 +154,11 @@
         label: "{{ lifecycle }}"
 
     - debug:
-        var: "lifecycle_ids | difference(content_view_environment_ids) | length"
+        var: "lifecycle_ids | difference(content_view_environment_ids)"
+        verbosity: "1"
+
+    - debug:
+        var: "lifecycle_dicts"
         verbosity: "1"
 
     - name: "Promote content view to lifecycle environments"

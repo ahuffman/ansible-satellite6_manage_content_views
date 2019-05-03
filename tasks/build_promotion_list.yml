@@ -9,13 +9,16 @@
 
 - name: "Set lifecycle ID"
   set_fact:
-    lifecycle_id: "[{{ lifecycle_qry.json | json_query(jq) | join('') }}]"
+    lifecycle_id: "[{{ lifecycle_qry.json | json_query(lc_id_jq) | join('') }}]"
+    lifecycle_data: "[{{ lifecycle_qry.json | json_query(lc_data_jq) | join('') }}]"
   vars:
-    jq: "results[?name==`{{ lifecycle }}`].id"
+    lc_id_jq: "results[?name==`{{ lifecycle }}`].id"
+    lc_data_jq: "results[?name==`{{ lifecycle }}`].{id: id, name: name}"
 
 - name: "Add lifecycle_id to lifecycle_ids list"
   set_fact:
     lifecycle_ids: "{{ lifecycle_ids | union(lifecycle_id) }}"
+    lifecycle_dicts: "{{ lifecycle_dicts | union(lifecycle_data) }}"
 
 - debug:
     var: "lifecycle_ids"
