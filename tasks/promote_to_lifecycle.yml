@@ -46,8 +46,8 @@
   failed_when:
     - "cv_promote_qry.json.state == 'paused'"
     - "cv_promote_qry.json.result == 'error'"
-  retries: "240"
-  delay: "30"
+  retries: "{{ sat6_max_task_retries }}"
+  delay: "{{ sat6_retry_delay }}"
 
 - debug:
     var: "cv_promote_qry.json"

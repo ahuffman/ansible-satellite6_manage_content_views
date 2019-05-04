@@ -73,8 +73,8 @@
       failed_when:
         - "cv_publish_qry.json.state == 'paused'"
         - "cv_publish_qry.json.result == 'error'"
-      retries: "240"
-      delay: "30"
+      retries: "{{ sat6_max_task_retries }}"
+      delay: "{{ sat6_retry_delay }}"
 
     - debug:
         var: "cv_publish_qry.json"
@@ -214,8 +214,8 @@
       failed_when:
         - "cv_delete_qry.json.state == 'paused'"
         - "cv_delete_qry.json.result == 'error'"
-      retries: "120"
-      delay: "30"
+      retries: "{{ sat6_max_task_retries }}"
+      delay: "{{ sat6_retry_delay }}"
 
     - debug:
         var: "cv_delete_qry.json"

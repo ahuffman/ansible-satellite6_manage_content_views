@@ -4,3 +4,5 @@ sat6_user: ""
 sat6_pass: ""
 sat6_organization: ""
 sat6_content_views: []
+sat6_max_task_retries: "240"
+sat6_retry_delay: "30"

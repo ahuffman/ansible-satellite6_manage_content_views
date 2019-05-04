@@ -10,6 +10,8 @@ An Ansible role to manage creation, publishing, promotion, and deletion of Satel
 | sat6_user | yes | Satellite6 user with rights to view/read/delete/publish/promote content views. | "" | string |
 | sat6_pass | yes | Password of the `sat6_user`. Recommended to store this value encrypted in an Ansible vault.| "" | string |
 | sat6_organization | yes | Name of the Satellite6 Organization where the content views reside. | "" | string |
+| sat6_max_task_retries | no | Maximum number of attempts at checking a task's status in Satellite 6. Used with `sat6_retry_delay`| "240" | integer |
+| sat6_retry_delay | no | Time to delay in seconds between retrying Satellite6 task status checks.  Used with `sat6_max_task_retries`. For example, `sat6_max_task_retries * sat6_retry_delay / 60 = 120` (1 hour).  This is how long we will wait for a publish, promote, create, delete of a content view to complete.| "30" | integer |
 | sat6_content_views | yes | List of content views to act upon with the role. See the `sat6_content_views - Dictionary fields` section for details.| [] | list of dictionaries |
 
 
