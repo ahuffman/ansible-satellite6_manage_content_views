@@ -51,26 +51,18 @@ An Ansible role to manage creation, publishing, promotion, and deletion of Satel
             create_on_missing: True
             publish_new_version: True
             publish_description: "Latest content from Red Hat CDN"
-            publish_force_yum_metadata_regeneration: False
             promote_to:
-              - "RHEL7-Dev"
-              - "RHEL7-QA"
               - "RHEL7-Prod"
-            promote_description: "Promoted by Ansible"
-            promote_force_yum_metadata_regeneration: False
+            promote_force_yum_metadata_regeneration: True
             promote_bypass_environment_path: True
           - name: "RHEL6"
-            create_on_missing: True
             publish_new_version: True
-            publish_description: "Latest content from Red Hat CDN"
-            publish_force_yum_metadata_regeneration: False
             promote_to:
               - "RHEL6-Dev"
               - "RHEL6-QA"
               - "RHEL6-Prod"
-            promote_description: "Promoted by Ansible"
-            promote_force_yum_metadata_regeneration: False
             promote_bypass_environment_path: True
+            promote_remove_previous_version: True
 ```
 
 ## License
