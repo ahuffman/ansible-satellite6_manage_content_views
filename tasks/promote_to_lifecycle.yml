@@ -3,7 +3,7 @@
   set_fact:
     promotion_diff: "{{ lifecycle_ids | difference(content_view_environment_ids) }}"
 
-# For pretty task name
+# For pretty task names
 - name: "Set promotion_names"
   set_fact:
     promotion_names: "{{ lifecycle_dicts | json_query(jq) | union(promotion_names | default([])) }}"
