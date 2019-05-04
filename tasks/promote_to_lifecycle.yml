@@ -52,3 +52,12 @@
 - debug:
     var: "cv_promote_qry.json"
     verbosity: "1"
+
+- name: "Set content_view_published"
+  set_fact:
+    content_view_published: True
+  when:
+    - "cv_promote_qry.json.state == 'stopped'"
+    - "not cv_promote_qry.json.pending | bool"
+    - "cv_promote_qry.json.progress | string == '1.0'"
+    - "cv_promote_qry.json.result == 'success'"

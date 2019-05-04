@@ -3,6 +3,7 @@
   set_fact:
     content_view_id: ""
     content_view_composite: ""
+    content_view_published: False
 
 - name: "Obtain content view ID"
   block:
@@ -223,11 +224,19 @@
   when:
     - "cv.promote_remove_previous_version | default(False)"
     - "cv.promote_to | default([]) | length > 0" #only delete when we promote
-    - "cv_promote_qry.json.state == 'stopped'"
-    - "not cv_promote_qry.json.pending | bool"
-    - "cv_promote_qry.json.progress | string == '1.0'"
-    - "cv_promote_qry.json.result == 'success'"
     - "cv_vers | length > 1" #make sure we have more than 1 version
+    - "content_view_published"
+  vars:
+    cv_id_jq: "versions[*].id"
+    cv_vers: "{{ cv_ver_qry.json.results[0] | json_query(cv_id_jq) }}"
+
+- debug:
+    msg:
+      - "Not attempting to remove previous content view version for one of the following reasons:"
+      - "    A content view was not published during this run"
+      - "    There was less than 2 content view versions, so we do not want to try and delete the only one we have."
+  when: (not content_view_published and cv.promote_remove_previous_version | default(False)) or
+        (cv_vers | length < 2 and cv.promote_remove_previous_version | default(False))
   vars:
     cv_id_jq: "versions[*].id"
     cv_vers: "{{ cv_ver_qry.json.results[0] | json_query(cv_id_jq) }}"
