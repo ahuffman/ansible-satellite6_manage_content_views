@@ -51,6 +51,8 @@
         label: "{{ cv.name }}"
       when: "sat6_content_views | length > 0"
 
+    #TODO: reporting of actions via debugs
+
 # set uri module defaults to avoid repetitive params
   module_defaults:
     uri:
