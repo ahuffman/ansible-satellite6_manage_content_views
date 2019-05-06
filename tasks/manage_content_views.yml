@@ -4,6 +4,7 @@
     content_view_id: ""
     content_view_composite: ""
     content_view_published: False
+    remove_content_view_version_ids: []
 
 - name: "Obtain content view ID"
   block:
@@ -31,8 +32,6 @@
     - debug:
         var: "content_view_composite"
         verbosity: "1"
-  tags:
-    - "content_view_id"
 
 # TODO:
 # - name: "Create content view"
@@ -84,8 +83,6 @@
     - "cv.publish_new_version | default(False)"
     - "not content_view_composite"
     - "content_view_id != ''"
-  tags:
-    - "publish_content_view"
 
 - name: "Promote content view to lifecycle environments"
   block:
@@ -102,28 +99,15 @@
 
     - name: "Obtain content view facts"
       block:
-        - name: "Obtain content view Version ID"
-          uri:
-            body: "{\"search\": 'name=\"{{ cv.name }}\"',
-                    \"organization_id\": \"{{ organization_id }}\"
-                  }"
-          register: "cv_ver_qry"
-          vars:
-            sat6_url_path: "katello/api/content_views"
-
-        - debug:
-            var: "cv_ver_qry.json.results[0]"
-            verbosity: "1"
-
         - name: "Set content view facts"
           set_fact:
-            content_view_version_id: "{{ cv_ver_qry.json.results[0] | json_query(cv_id_jq) | max }}"
+            content_view_version_id: "{{ cv_qry.json.results[0] | json_query(cv_id_jq) | max }}"
           vars:
             cv_id_jq: "versions[*].id"
 
         - name: "Set {{ cv.name }} latest version promotion list"
           set_fact:
-            content_view_environment_ids: "{{ cv_ver_qry.json.results[0] | json_query(cv_env_ids_jq) | flatten }}"
+            content_view_environment_ids: "{{ cv_qry.json.results[0] | json_query(cv_env_ids_jq) | flatten }}"
           vars:
             cv_env_ids_jq: "versions[?id==`{{ content_view_version_id }}`].environment_ids"
 
@@ -139,8 +123,6 @@
         - debug:
             var: "content_view_environment_ids"
             verbosity: "1"
-      tags:
-        - "content_view_facts"
 
     - name: "Set lifecycle environment id list"
       set_fact:
@@ -173,13 +155,10 @@
       when: "lifecycle_ids | difference(content_view_environment_ids) | length < 1"
       vars:
         lifecycles: "{{ cv.promote_to | join(', ') }}"
-
-  tags:
-    - "promote_cv_to_lifecycle"
   when:
     - "cv.promote_to | default([]) | length > 0"
 
-- name: "Remove content view versions"
+- name: "Remove previous content view version"
   block:
     - name: "Set previous content view version ID"
       set_fact:
@@ -200,7 +179,7 @@
         sat6_url_path: "katello/api/content_view_versions/{{ content_view_prev_version_id }}"
       register: "cv_prev_ver_delete"
 
-    - name: "Check status of previous {{ cv.name }} content view version (id: {{ content_view_prev_version_id }})  removal"
+    - name: "Check status of previous {{ cv.name }} content view version (id: {{ content_view_prev_version_id }}) removal"
       uri:
         body: "{\"id\": \"{{ cv_prev_ver_delete.json.id }}\"}"
       register: "cv_delete_qry"
@@ -211,7 +190,7 @@
         - "not cv_delete_qry.json.pending | bool"
         - "cv_delete_qry.json.progress | string == '1.0'"
         - "cv_delete_qry.json.result == 'success'"
-      changed_when: "cv_promote_qry.json.result == 'success'"
+      changed_when: "cv_delete_qry.json.result == 'success'"
       failed_when:
         - "cv_delete_qry.json.state == 'paused'"
         - "cv_delete_qry.json.result == 'error'"
@@ -224,19 +203,37 @@
   when:
     - "cv.promote_remove_previous_version | default(False)"
     - "cv.promote_to | default([]) | length > 0" #only delete when we promote
-    - "cv_vers | length > 1" #make sure we have more than 1 version
+    - "cv_vers | default([]) | length > 1" #make sure we have more than 1 version
     - "content_view_published"
   vars:
     cv_id_jq: "versions[*].id"
-    cv_vers: "{{ cv_ver_qry.json.results[0] | json_query(cv_id_jq) }}"
+    cv_vers: "{{ cv_qry.json.results[0] | json_query(cv_id_jq) }}"
 
 - debug:
     msg:
       - "Not attempting to remove previous content view version for one of the following reasons:"
       - "    A content view was not published during this run"
       - "    There was less than 2 content view versions, so we do not want to try and delete the only one we have."
-  when: (not content_view_published and cv.promote_remove_previous_version | default(False)) or
-        (cv_vers | length < 2 and cv.promote_remove_previous_version | default(False))
+  when: (not content_view_published and
+          cv.promote_remove_previous_version | default(False)) or
+        (cv_vers | length < 2 and
+          cv.promote_remove_previous_version | default(False))
   vars:
     cv_id_jq: "versions[*].id"
-    cv_vers: "{{ cv_ver_qry.json.results[0] | json_query(cv_id_jq) }}"
+    cv_vers: "{{ cv_qry.json.results[0] | json_query(cv_id_jq) }}"
+
+- name: "Remove specified content view version(s)"
+  block:
+    - name: "Set content view version ID"
+      include_tasks: "build_cv_remove_list.yml"
+      with_items: "{{ cv.remove_content_view_versions }}"
+      loop_control:
+        loop_var: "version"
+
+    - name: "Remove content view versions"
+      include_tasks: "remove_cv_vers.yml"
+      with_items: "{{ remove_content_view_version_ids }}"
+      loop_control:
+        loop_var: "version"
+        label: "{{ version.name }}"
+  when: "cv.remove_content_view_versions | default([]) | length > 0"

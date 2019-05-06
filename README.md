@@ -23,11 +23,12 @@ An Ansible role to manage creation, publishing, promotion, and deletion of Satel
 | publish_new_version | no | Publishes a new content view version if `True`. | False | boolean |
 | publish_description | no | Description of content view changes during publishing of a new version | "" | string |
 | publish_force_yum_metadata_regeneration | no | Whether or not to force yum metadata regeneration while publishing a new content view version | False | boolean |
-| promote_to | no | List of lifecycle environment/paths to promote the content view to.  We will skip any listed environments where the content view has already been promoted.| [] | list |
+| promote_to | no | List of lifecycle environment/paths to promote the newest content view to.  We will skip promoting to any listed environments where the content view has already been promoted. | [] | list |
 | promote_description | no | Description of content view promotion changes during promotion of a content view. | "" | string |
 | promote_force_yum_metadata_regeneration | no | Whether or not to force yum metadata regeneration while promoting a content view to a lifecycle environment/path. | False | boolean |
-| promote_remove_previous_version | no | Remove the previous content view version when promoting a new version of a content view. This requires that you have already promoted versions to all lifecycle environments where the previous version had been promoted.  This restriction is the same whether you utilize the Satellite6 API, UI, or CLI.|
+| promote_remove_previous_version | no | Whether or not to remove the previous content view version when promoting a new version of a content view. This requires that you have already promoted versions to all lifecycle environments where the previous version had been promoted (i.e. the previous version cannot still be attached to lifecycle environments).  This restriction is the same whether you utilize the Satellite6 API, UI, or CLI.| False | boolean |
 | promote_bypass_environment_path | no | Force promotion to a lifecycle environment/path outside of normal path restrictions (i.e. skip previous paths/environments) | False | boolean |
+| remove_content_view_versions | no | Remove list of specified content view versions.  This requires that the requested versions to delete are not associated with any lifecycle environments presently, including `Library`. | [] | list |
 
 ## Example Playbook
 ```yaml
@@ -48,21 +49,26 @@ An Ansible role to manage creation, publishing, promotion, and deletion of Satel
         sat6_organization: "Huffnet"
         sat6_content_views:
           - name: "RHEL7"
-            create_on_missing: True
             publish_new_version: True
             publish_description: "Latest content from Red Hat CDN"
             promote_to:
               - "RHEL7-Prod"
             promote_force_yum_metadata_regeneration: True
             promote_bypass_environment_path: True
+          # Publish new version, promote to all lifecycle environments, remove old content view version
           - name: "RHEL6"
             publish_new_version: True
             promote_to:
               - "RHEL6-Dev"
               - "RHEL6-QA"
               - "RHEL6-Prod"
-            promote_bypass_environment_path: True
             promote_remove_previous_version: True
+          # Remove specified content view versions
+          - name: "RHEL7-HA_Clustering"
+            remove_content_view_versions:
+              - "1.0"
+              - "2.0"
+              - "3.0"
 ```
 
 ## License

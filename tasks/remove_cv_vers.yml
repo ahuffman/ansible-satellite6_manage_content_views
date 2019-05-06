@@ -1,0 +1,31 @@
+---
+- name: "Initiate removal of {{ cv.name }} content view version {{ version.name }}"
+  uri:
+    method: "DELETE"
+    status_code: "200,202"
+    body: "{\"id\": \"{{ version.id }}\"}"
+  vars:
+    sat6_url_path: "katello/api/content_view_versions/{{ version.id }}"
+  register: "cv_ver_delete"
+
+- name: "Check status of {{ cv.name }} content view version {{ version.name }} removal"
+  uri:
+    body: "{\"id\": \"{{ cv_ver_delete.json.id }}\"}"
+  register: "cv_delete_qry"
+  vars:
+    sat6_url_path: "foreman_tasks/api/tasks/{{ cv_ver_delete.json.id }}"
+  until:
+    - "cv_delete_qry.json.state == 'stopped'"
+    - "not cv_delete_qry.json.pending | bool"
+    - "cv_delete_qry.json.progress | string == '1.0'"
+    - "cv_delete_qry.json.result == 'success'"
+  changed_when: "cv_delete_qry.json.result == 'success'"
+  failed_when:
+    - "cv_delete_qry.json.state == 'paused'"
+    - "cv_delete_qry.json.result == 'error'"
+  retries: "{{ sat6_max_task_retries }}"
+  delay: "{{ sat6_retry_delay }}"
+
+- debug:
+    var: "cv_delete_qry"
+    verbosity: "1"

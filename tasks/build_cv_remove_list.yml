@@ -1,0 +1,14 @@
+---
+- name: "Clear content view version ID"
+  set_fact:
+    content_view_version_id: ""
+
+- name: "Set content view version ID"
+  set_fact:
+    content_view_version_id: [{id: "{{ cv_qry.json.results[0] | json_query(cv_ver_id_jq ) | join('') }}", name: "{{ version }}"}]
+  vars:
+    cv_ver_id_jq: "versions[?version=='{{ version }}'].id"
+
+- name: "Add content view version ID to list"
+  set_fact:
+    remove_content_view_version_ids: "{{ remove_content_view_version_ids | union(content_view_version_id) }}"
