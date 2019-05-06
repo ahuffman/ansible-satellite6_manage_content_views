@@ -28,7 +28,7 @@ An Ansible role to manage creation, publishing, promotion, and deletion of Satel
 | promote_force_yum_metadata_regeneration | no | Whether or not to force yum metadata regeneration while promoting a content view to a lifecycle environment/path. | False | boolean |
 | promote_remove_previous_version | no | Whether or not to remove the previous content view version when promoting a new version of a content view. This requires that you have already promoted versions to all lifecycle environments where the previous version had been promoted (i.e. the previous version cannot still be attached to lifecycle environments).  This restriction is the same whether you utilize the Satellite6 API, UI, or CLI.| False | boolean |
 | promote_bypass_environment_path | no | Force promotion to a lifecycle environment/path outside of normal path restrictions (i.e. skip previous paths/environments) | False | boolean |
-| remove_content_view_versions | no | Remove list of specified content view versions.  This requires that the requested versions to delete are not associated with any lifecycle environments presently, including `Library`. | [] | list |
+| remove_content_view_versions | no | Remove list of specified content view versions, which correspond to the version number ("Version" column of the Satellite6 content view's, "Versions" tab table).  This requires that the requested versions to delete are not associated with any lifecycle environments presently, including `Library`, which is a Satellite6 requirement. If you would like to delete a content view version associated with the `Library` lifecycle environment, remove it from that environment first.| [] | list |
 
 ## Example Playbook
 ```yaml
@@ -64,7 +64,7 @@ An Ansible role to manage creation, publishing, promotion, and deletion of Satel
               - "RHEL6-Prod"
             promote_remove_previous_version: True
           # Remove specified content view versions
-          - name: "RHEL7-HA_Clustering"
+          - name: "RHEL7-HA Clustering"
             remove_content_view_versions:
               - "1.0"
               - "2.0"
