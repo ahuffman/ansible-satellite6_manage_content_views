@@ -1,0 +1,37 @@
+---
+- name: "Initiate publishing new content view version of {{ cv.name }}"
+  uri:
+    method: "POST"
+    status_code: "202"
+    body: "{\"description\": \"{{ cv.publish_description | default('') }}\",
+            \"force_yum_metadata_regeneration\": \"{{ cv.publish_force_yum_metadata_regeneration | default(False) }}\"
+          }"
+  vars:
+    sat6_url_path: "katello/api/content_views/{{ content_view_id }}/publish"
+  register: "cv_publish"
+
+- debug:
+    var: "cv_publish.json"
+    verbosity: "1"
+
+- name: "Check {{ cv.name }} content view publish status"
+  uri:
+    body: "{\"id\": \"{{ cv_publish.json.id }}\"}"
+  register: "cv_publish_qry"
+  vars:
+    sat6_url_path: "foreman_tasks/api/tasks/{{ cv_publish.json.id }}"
+  until:
+    - "cv_publish_qry.json.state == 'stopped'"
+    - "not cv_publish_qry.json.pending | bool"
+    - "cv_publish_qry.json.progress | string == '1.0'"
+    - "cv_publish_qry.json.result == 'success'"
+  changed_when: "cv_publish_qry.json.result == 'success'"
+  failed_when:
+    - "cv_publish_qry.json.state == 'paused'"
+    - "cv_publish_qry.json.result == 'error'"
+  retries: "{{ sat6_max_task_retries }}"
+  delay: "{{ sat6_retry_delay }}"
+
+- debug:
+    var: "cv_publish_qry.json"
+    verbosity: "1"

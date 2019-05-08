@@ -1,0 +1,11 @@
+---
+- name: "Obtain content view ID"
+  uri:
+    body: "{\"search\": 'name=\"{{ cv.name }}\"', \"organization_id\": \"{{ organization_id }}\"}"
+  register: "cv_qry"
+  vars:
+    sat6_url_path: "katello/api/content_views"
+
+- debug:
+    var: "cv_qry.json.results[0]"
+    verbosity: "1"

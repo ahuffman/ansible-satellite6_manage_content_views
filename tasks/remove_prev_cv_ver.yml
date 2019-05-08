@@ -1,0 +1,41 @@
+---
+- name: "Set previous content view version ID"
+  set_fact:
+    content_view_prev_version_id: "{{ cv_vers_sorted[1] }}"
+  vars:
+    cv_vers_sorted: "{{ cv_vers | sort(reverse=True) }}"
+
+- debug:
+    var: "content_view_prev_version_id"
+    verbosity: "1"
+
+- name: "Initiate removal of previous {{ cv.name }} content view version (id: {{ content_view_prev_version_id }})"
+  uri:
+    method: "DELETE"
+    status_code: "200,202"
+    body: "{\"id\": \"{{ content_view_prev_version_id }}\"}"
+  vars:
+    sat6_url_path: "katello/api/content_view_versions/{{ content_view_prev_version_id }}"
+  register: "cv_prev_ver_delete"
+
+- name: "Check status of previous {{ cv.name }} content view version (id: {{ content_view_prev_version_id }}) removal"
+  uri:
+    body: "{\"id\": \"{{ cv_prev_ver_delete.json.id }}\"}"
+  register: "cv_delete_qry"
+  vars:
+    sat6_url_path: "foreman_tasks/api/tasks/{{ cv_prev_ver_delete.json.id }}"
+  until:
+    - "cv_delete_qry.json.state == 'stopped'"
+    - "not cv_delete_qry.json.pending | bool"
+    - "cv_delete_qry.json.progress | string == '1.0'"
+    - "cv_delete_qry.json.result == 'success'"
+  changed_when: "cv_delete_qry.json.result == 'success'"
+  failed_when:
+    - "cv_delete_qry.json.state == 'paused'"
+    - "cv_delete_qry.json.result == 'error'"
+  retries: "{{ sat6_max_task_retries }}"
+  delay: "{{ sat6_retry_delay }}"
+
+- debug:
+    var: "cv_delete_qry.json"
+    verbosity: "1"
