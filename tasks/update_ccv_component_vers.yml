@@ -1,0 +1,48 @@
+---
+- name: "Update composite content view component version to specified version"
+  block:
+    - name: "Obtain component content view data"
+      uri:
+        body: "{\"search\": 'name=\"{{ component.name }}\"', \"organization_id\": \"{{ organization_id }}\"}"
+      register: "comp_cv_qry"
+      vars:
+        sat6_url_path: "katello/api/content_views"
+
+    - debug:
+        var: "comp_cv_qry"
+        verbosity: "1"
+
+    - name: "Set component content view facts"
+      set_fact:
+        component_cv_ver_id: "{{ composite_components | json_query(cv_comp_ver_id_jq) | join('') }}"
+        component_ver_id: "{{ comp_cv_qry.json.results[0] | json_query(comp_ver_id_jq) | join('') }}"
+        component_id: "{{ comp_cv_qry.json.results[0].id }}"
+      vars:
+        cv_comp_ver_id_jq: "[?name==`{{ component.name }}`].comp_id"
+        comp_ver_id_jq: "versions[?version=='{{ component.version }}'].id"
+  when: "cv.components.content_views | default([]) | length > 0"
+
+- name: "Set component ID"
+  set_fact:
+    component_cv_ver_id: "{{ component.comp_id }}"
+  when: "component.comp_id | default('') != ''"
+
+- name: "Update composite content view component version"
+  uri:
+    method: "PUT"
+    body: "{
+          {% if component_ver_id | default('') != '' %}
+          \"content_view_version_id\": {{ component_ver_id }},
+          {% else %}
+          \"latest\": \"true\",
+          {% endif %}
+          \"id\": {{ component_cv_ver_id }},
+          \"composite_content_view_id\": {{ composite_content_view_id }}
+          }"
+  vars:
+    sat6_url_path: "katello/api/content_views/{{ composite_content_view_id }}/content_view_components/{{ component_cv_ver_id }}"
+  register: "ccv_component_update"
+
+- debug:
+    var: "ccv_component_update"
+    verbosity: "1"

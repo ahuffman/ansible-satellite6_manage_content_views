@@ -1,5 +1,29 @@
 ---
-- name: "Initiate publishing new content view version of {{ cv.name }}"
+- name: "Content view case"
+  block:
+    - name: "Clear content view name"
+      set_fact:
+        content_view_name: ""
+
+    - name: "Set content view name"
+      set_fact:
+        content_view_name: "{{ cv.name }}"
+  when: "not content_view_composite"
+
+- name: "Composite content view component case"
+  block:
+    - name: "Clear content view ID and name"
+      set_fact:
+        content_view_id: ""
+        content_view_name: ""
+
+    - name: "Set content view ID and name"
+      set_fact:
+        content_view_id: "{{ ccv.cv_id }}"
+        content_view_name: "{{ ccv.name }}"
+  when: "content_view_composite"
+
+- name: "Initiate publishing new content view version of {{ content_view_name }}"
   uri:
     method: "POST"
     status_code: "202"
@@ -14,7 +38,7 @@
     var: "cv_publish.json"
     verbosity: "1"
 
-- name: "Check {{ cv.name }} content view publish status"
+- name: "Check {{ content_view_name }} content view publish status"
   uri:
     body: "{\"id\": \"{{ cv_publish.json.id }}\"}"
   register: "cv_publish_qry"

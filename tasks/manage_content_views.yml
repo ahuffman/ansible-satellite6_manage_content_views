@@ -5,13 +5,16 @@
     content_view_composite: ""
     content_view_published: False
     remove_content_view_version_ids: []
+    composite_content_view_id: ""
+    composite_components: []
+    composite_auto_publish: False
 
 - name: "Obtain content view ID"
   block:
-    - name: "Obtain content views"
+    - name: "Obtain {{ cv.name }} content view data"
       include_tasks: "get_content_views.yml"
 
-    - name: "Set content view facts"
+    - name: "Set {{ cv.name }} content view facts"
       set_fact:
         content_view_id: "{{ cv_qry.json.results[0].id }}"
         content_view_composite: "{{ cv_qry.json.results[0].composite | bool }}"
@@ -24,6 +27,16 @@
     - debug:
         var: "content_view_composite"
         verbosity: "1"
+
+    - name: "Set composite content view facts"
+      set_fact:
+        composite_content_view_id: "{{ cv_qry.json.results[0].id }}"
+        composite_components: "{{ cv_qry.json.results[0] | json_query(ccv_comp_jq) }}"
+        composite_auto_publish: "{{ cv_qry.json.results[0].auto_publish | bool }}"
+      vars:
+        ccv_comp_jq: "content_view_components[*].{name: content_view.name, cv_id: content_view.id, comp_id: id}"
+      when: "content_view_composite"
+
 
 # TODO:
 # - name: "Create content view"
@@ -39,6 +52,13 @@
     - "cv.publish_new_version | default(False)"
     - "not content_view_composite"
     - "content_view_id != ''"
+
+- name: "Publish new composite content view version"
+  include_tasks: "publish_composite_content_view.yml"
+  when:
+    - "cv.publish_new_version | default(False)"
+    - "content_view_composite"
+    - "composite_content_view_id != ''"
 
 - name: "Promote content view to lifecycle environments"
   include_tasks: "promote_content_view.yml"

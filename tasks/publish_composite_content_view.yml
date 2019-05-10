@@ -1,0 +1,99 @@
+---
+- debug:
+    var: "content_view_composite"
+    verbosity: "1"
+
+- name: "Publish new versions of all composite content view components"
+  block:
+    - debug:
+        var: "cv.components.publish_all"
+        verbosity: "1"
+
+    - name: "Publish new composite content view component versions"
+      include_tasks: "publish_content_view.yml"
+      with_items: "{{ composite_components }}"
+      loop_control:
+        loop_var: "ccv"
+        label: "{{ ccv.name }}"
+  when:
+    - "cv.components.publish_all | default(False)"
+    - "cv.publish_new_version | default(False))"
+
+- name: "Publish composite content view with specified versions"
+  block:
+    - debug:
+        var: "cv.components.content_views"
+        verbosity: "1"
+
+    - name: "Update composite content view component versions"
+      include_tasks: "update_ccv_component_vers.yml"
+      with_items: "{{ cv.components.content_views }}"
+      loop_control:
+        loop_var: "component"
+        label: "{{ component.name }}"
+      register: "ccv_comp_update"
+      changed_when: "ccv_comp_update.status == '200'"
+  when:
+    - "cv.components.content_views | default([]) | length > 0"
+    - "not cv.components.publish_all | default(False)"
+    - "cv.publish_new_version"
+    - "not composite_auto_publish" #don't try and publish something that's going to get automatically published on a component content view update
+
+- name: "Publish composite content view with latest content view versions"
+  block:
+    - debug:
+        msg: "publish composite content view with latest component versions"
+        verbosity: "1"
+
+    - name: "Update composite content view component versions to latest"
+      include_tasks: "update_ccv_component_vers.yml"
+      with_items: "{{ composite_components }}"
+      loop_control:
+        loop_var: "component"
+      register: "ccv_comp_update"
+      changed_when: "ccv_comp_update.status == '200'"
+  when:
+    - "cv.publish_new_version"
+    - "cv.components.content_views | default([]) | length < 1"
+
+- name: "Publish new composite content view version"
+  block:
+    - name: "Initiate publishing new composite content view version of {{ cv.name }}"
+      uri:
+        method: "POST"
+        status_code:
+          - "202"
+          - "200"
+        body: "{\"description\": \"{{ cv.publish_description | default('') }}\",
+                \"force_yum_metadata_regeneration\": \"{{ cv.publish_force_yum_metadata_regeneration | default(False) }}\"
+              }"
+      vars:
+        sat6_url_path: "katello/api/content_views/{{ composite_content_view_id }}/publish"
+      register: "ccv_publish"
+
+    - debug:
+        var: "ccv_publish.json"
+        verbosity: "1"
+
+    - name: "Check {{ cv.name }} composite content view publish status"
+      uri:
+        body: "{\"id\": \"{{ ccv_publish.json.id }}\"}"
+      register: "ccv_publish_qry"
+      vars:
+        sat6_url_path: "foreman_tasks/api/tasks/{{ ccv_publish.json.id }}"
+      until:
+        - "ccv_publish_qry.json.state == 'stopped'"
+        - "not ccv_publish_qry.json.pending | bool"
+        - "ccv_publish_qry.json.progress | string == '1.0'"
+        - "ccv_publish_qry.json.result == 'success'"
+      changed_when: "ccv_publish_qry.json.result == 'success'"
+      failed_when:
+        - "ccv_publish_qry.json.state == 'paused'"
+        - "ccv_publish_qry.json.result == 'error'"
+      retries: "{{ sat6_max_task_retries }}"
+      delay: "{{ sat6_retry_delay }}"
+
+    - debug:
+        var: "ccv_publish_qry.json"
+        verbosity: "1"
+  when: "not composite_auto_publish" #don't try and publish something that's going to get automatically published on a component content view update

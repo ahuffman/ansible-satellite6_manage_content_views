@@ -2,7 +2,9 @@
 - name: "Initiate removal of {{ cv.name }} content view version {{ version.name }}"
   uri:
     method: "DELETE"
-    status_code: "200,202"
+    status_code:
+      - "200"
+      - "202"
     body: "{\"id\": \"{{ version.id }}\"}"
   vars:
     sat6_url_path: "katello/api/content_view_versions/{{ version.id }}"
