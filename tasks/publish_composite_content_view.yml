@@ -51,7 +51,6 @@
       loop_control:
         loop_var: "component"
       register: "ccv_comp_update"
-      changed_when: "ccv_comp_update.status == '200'"
   when:
     - "cv.publish_new_version"
     - "cv.components.content_views | default([]) | length < 1"
