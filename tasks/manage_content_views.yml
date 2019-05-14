@@ -59,6 +59,7 @@
     - "cv.publish_new_version | default(False)"
     - "content_view_composite"
     - "composite_content_view_id != ''"
+    - "not composite_auto_publish"
 
 - name: "Promote content view to lifecycle environments"
   include_tasks: "promote_content_view.yml"
