@@ -1,7 +1,6 @@
 # ahuffman.satellite6_manage_content_views
 
-***Work in progess***  
-An Ansible role to manage creation, publishing, promotion, and deletion of Satellite6 content views.
+An Ansible role to manage publishing and promotion of Satellite6 content views and composite content views.
 
 ## Role Variables
 | Variable Name | Required | Description | Default Value | Type |
@@ -21,16 +20,29 @@ An Ansible role to manage creation, publishing, promotion, and deletion of Satel
 | name | yes | Name of the content view to manage. | N/A | string |
 | create_on_missing | no | *Not implemented yet* | False | boolean |
 | publish_new_version | no | Publishes a new content view version if `True`. | False | boolean |
-| publish_description | no | Description of content view changes during publishing of a new version | "" | string |
+| publish_description | no | Description of content view changes during publishing of a new version. When used with a composite content view the underlying content views will be published with this description as well if using `components.publish_all: True`.| "" | string |
 | publish_force_yum_metadata_regeneration | no | Whether or not to force yum metadata regeneration while publishing a new content view version | False | boolean |
 | promote_to | no | List of lifecycle environment/paths to promote the newest content view to.  We will skip promoting to any listed environments where the content view has already been promoted. | [] | list |
-| promote_description | no | Description of content view promotion changes during promotion of a content view. | "" | string |
+| promote_description | no | Description of content view promotion changes during promotion of a content view. When used with a composite content view the underlying content views will be promoted with this description as well if using `components.publish_all: True`.| "" | string |
 | promote_force_yum_metadata_regeneration | no | Whether or not to force yum metadata regeneration while promoting a content view to a lifecycle environment/path. | False | boolean |
 | promote_remove_previous_version | no | Whether or not to remove the previous content view version when promoting a new version of a content view. This requires that you have already promoted versions to all lifecycle environments where the previous version had been promoted (i.e. the previous version cannot still be attached to lifecycle environments).  This restriction is the same whether you utilize the Satellite6 API, UI, or CLI.| False | boolean |
 | promote_bypass_environment_path | no | Force promotion to a lifecycle environment/path outside of normal path restrictions (i.e. skip previous paths/environments) | False | boolean |
 | remove_content_view_versions | no | Remove list of specified content view versions, which correspond to the version number ("Version" column of the Satellite6 content view's, "Versions" tab table).  This requires that the requested versions to delete are not associated with any lifecycle environments presently, including `Library`, which is a Satellite6 requirement. If you would like to delete a content view version associated with the `Library` lifecycle environment, remove it from that environment first.| [] | list |
+| components | yes | Settings for composite content views.  Required *** only when *** working with composite content views | n/a | dictionary |
 
-## Example Playbook
+### sat6_content_views.components - Dictionary fields
+| Variable Name | Required | Description | Default Value | Type |
+| --- | :---: | --- | :---: | --- |
+| publish_all | yes | Whether or not to publish new versions of all content views in a composite content view | False | boolean |
+| content_views | no | List of content view version names and versions to publish the composite content view with | n/a | list of dictionaries |
+
+### sat6_content_views.components.content_views - Dictionary fields
+| Variable Name | Required | Description | Default Value | Type |
+| --- | :---: | --- | :---: | --- |
+| name | yes | Name of the content view in the composite content view | n/a | string |
+| version | yes | Version number of the content view in the composite content view to publish the composite content view with | n/a | string |
+
+## Playbook Example Use-Cases
 ```yaml
 ---
 - name: "Automated Satellite6 content view publish and promote"
@@ -69,6 +81,29 @@ An Ansible role to manage creation, publishing, promotion, and deletion of Satel
               - "1.0"
               - "2.0"
               - "3.0"
+          # publish new versions of all content views in a composite view and don't remove previous composite content view version, and promote to Dev
+          - name: "RHEL7 composite"
+            publish_new_version: True
+            components:
+              publish_all: True
+            promote_to:
+              - "RHEL7-Dev"
+          # publish specific content view versions in a composite content view with publish and promote descriptions, remove previous composite content view version, and promote to 2 lifecycle environments
+          - name: "RHEL7 composite2"
+            publish_new_version: True
+            publish_description: "Published by Ansible"
+            promote_description: "Promoted by Ansible"
+            promote_remove_previous_version: True
+            components:
+              publish_all: False
+              content_views:
+                - name: "RHEL7"
+                  version: "3.0"
+                - name: "RHEL7-HA Clustering"
+                  version: "5.0"
+            promote_to:
+              - "RHEL7-Dev"
+              - "RHEL7-QA"
 ```
 
 ## License
