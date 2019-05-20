@@ -59,3 +59,9 @@
 - debug:
     var: "cv_publish_qry.json"
     verbosity: "1"
+
+- name: "Update publish statistics"
+  set_fact:
+    content_views_published: "{{ content_views_published | int + 1 }}"
+    content_views_published_names: "{{ content_views_published_names | union([content_view_name]) }}"
+  when: "cv_publish_qry.json.result == 'success'"

@@ -61,3 +61,12 @@
     - "not cv_promote_qry.json.pending | bool"
     - "cv_promote_qry.json.progress | string == '1.0'"
     - "cv_promote_qry.json.result == 'success'"
+
+- name: "Set content view promotion statistics"
+  set_fact:
+    content_views_promoted: "{{ content_views_promoted | int + cv_promo_lc | int }}"
+    content_views_promoted_names: "{{ content_views_promoted_names | union([cv_promo_txt]) }}"
+  vars:
+    cv_promo_lc: "{{ promotion_diff | length }}"
+    cv_promo_txt: "{{ cv.name }} was promoted to {{ promotion_names | join(', ') }}"
+  when: "cv_promote_qry.json.result == 'success'"

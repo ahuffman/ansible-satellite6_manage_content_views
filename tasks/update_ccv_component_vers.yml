@@ -47,3 +47,11 @@
 - debug:
     var: "ccv_component_update"
     verbosity: "1"
+
+- name: "Set composite content view component update statistics"
+  set_fact:
+    composite_content_view_components_updated: "{{ composite_content_view_components_updated | int + 1 }}"
+    composite_content_view_components_updated_names: "{{ composite_content_view_components_updated_names | union([ccv_comp_update_txt]) }}"
+  vars:
+    ccv_comp_update_txt: "{{ cv.name }} component {{ component.name }}"
+  when: "ccv_component_update.status == 200"

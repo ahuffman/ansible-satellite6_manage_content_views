@@ -95,4 +95,10 @@
     - debug:
         var: "ccv_publish_qry.json"
         verbosity: "1"
+
+    - name: "Update composite content view publish statistics"
+      set_fact:
+        composite_content_views_published: "{{ composite_content_views_published | int + 1 }}"
+        composite_content_views_published_names: "{{ composite_content_views_published_names | union([cv.name]) }}"
+      when: "ccv_publish_qry.json.result == 'success'"
   when: "not composite_auto_publish" #don't try and publish something that's going to get automatically published on a component content view update

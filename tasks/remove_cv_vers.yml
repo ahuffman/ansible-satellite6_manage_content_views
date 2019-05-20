@@ -31,3 +31,11 @@
 - debug:
     var: "cv_delete_qry"
     verbosity: "1"
+
+- name: "Set content view version removal statistics"
+  set_fact:
+    content_views_versions_removed: "{{ content_views_versions_removed | int + 1 }}"
+    content_views_versions_removed_names: "{{ content_views_versions_removed_names | union([cv_del_txt]) }}"
+  vars:
+    cv_del_txt: "{{ cv.name }} - id: {{ version.id }}"
+  when: "cv_delete_qry.json.result == 'success'"

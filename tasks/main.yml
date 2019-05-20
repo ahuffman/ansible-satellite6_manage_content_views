@@ -43,6 +43,19 @@
       tags:
         - "organization_id"
 
+    - name: "Set initial statistics"
+      set_fact:
+        content_views_published: "0"
+        content_views_published_names: []
+        content_views_promoted: "0"
+        content_views_promoted_names: []
+        content_views_versions_removed: "0"
+        content_views_versions_removed_names: []
+        composite_content_view_components_updated: "0"
+        composite_content_view_components_updated_names: []
+        composite_content_views_published: "0"
+        composite_content_views_published_names: []
+
     - name: "Manage Content Views"
       include_tasks: "manage_content_views.yml"
       with_items: "{{ sat6_content_views }}"
@@ -50,9 +63,26 @@
         loop_var: "cv"
         label: "{{ cv.name }}"
       when: "sat6_content_views | length > 0"
-
-    #TODO: reporting of actions via debugs
-
+  always:
+    #reporting statistics of actions
+    - name: "Report content view changes"
+      debug:
+        msg:
+          - "Total content views published: {{ content_views_published }}"
+          - "Content views published:"
+          - "{{ content_views_published_names }}"
+          - "Total composite content views published: {{ composite_content_views_published }}"
+          - "Composite content views published:"
+          - "{{ composite_content_views_published_names }}"
+          - "Total content view promotions: {{ content_views_promoted }}"
+          - "Content views promoted:"
+          - "{{ content_views_promoted_names }}"
+          - "Total composite content view component updates: {{ composite_content_view_components_updated }}"
+          - "Composite content view components updated:"
+          - "{{ composite_content_view_components_updated_names }}"
+          - "Total content view versions removed: {{ content_views_versions_removed }}"
+          - "Content view versions removed:"
+          - "{{ content_views_versions_removed_names }}"
 # set uri module defaults to avoid repetitive params
   module_defaults:
     uri:
@@ -63,3 +93,4 @@
       method: "GET"
       status_code: "200"
       body_format: "json"
+      timeout: "120"
