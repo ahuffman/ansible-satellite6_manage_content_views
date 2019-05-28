@@ -90,6 +90,31 @@
     cv_id_jq: "versions[*].id"
     cv_vers: "{{ cv_qry.json.results[0] | json_query(cv_id_jq) }}"
 
+- name: "Keep specified number of content view versions"
+  block:
+    - name: "Obtain latest {{ cv.name }} content view data"
+      include_tasks: "get_content_views.yml"
+
+    - name: "Build list of content views to remove"
+      include_tasks: "build_cv_keep_list.yml"
+
+    - name: "Remove old content view versions, keeping {{ cv.keep_content_view_versions_count }}"
+      include_tasks: "remove_cv_vers.yml"
+      with_items: "{{ cv_remove_list }}"
+      loop_control:
+        loop_var: "version"
+        label: "{{ version.name }}"
+      when: "cv_remove_list | length > 0"
+
+    - debug:
+        msg:
+          - "Not attempting to remove old content view versions."
+          - "The specified number of versions to keep was {{ cv.keep_content_view_versions_count }}"
+          - "There are currently {{ cv_keep_list | length }} versions that exist, from a total of {{ cv_ver_names | length }}"
+          - "The remove list length is not greater than 0"
+      when: "cv_remove_list | length < 1"
+  when: "cv.keep_content_view_versions_count | default('') != ''"
+
 - name: "Remove specified content view version(s)"
   block:
     - name: "Set content view version ID"

@@ -1,0 +1,29 @@
+---
+- name: "Create list of content view version names"
+  set_fact:
+    cv_ver_names: "{{ cv_qry.json.results[0] | json_query(cv_ver_names_jq ) | sort(attribute='name',reverse=True) }}"
+  vars:
+    cv_ver_names_jq: "versions[*].{name: version, id: id}"
+
+- debug:
+    var: "cv_ver_names"
+    verbosity: "1"
+
+- name: "Set content view version keep list"
+  set_fact:
+    cv_keep_list: "{{ keep_qry }}"
+  vars:
+    keep_count: ":{{ cv.keep_content_view_versions_count }}"
+    keep_qry: "{{ '{{' }} cv_ver_names[{{ keep_count }}] {{ '}}' }}"
+
+- debug:
+    var: "cv_keep_list"
+    verbosity: "1"
+
+- name: "Set content view remove list"
+  set_fact:
+    cv_remove_list: "{{ cv_ver_names | difference(cv_keep_list) }}"
+
+- debug:
+    var: "cv_remove_list"
+    verbosity: "1"
