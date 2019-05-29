@@ -65,9 +65,10 @@
       when: "sat6_content_views | length > 0"
   always:
     #reporting statistics of actions
-    - name: "Report content view changes"
-      debug:
-        msg:
+    #  Set fact so we can re-use in email notifications or other tasks outside the role
+    - name: "Set statistics output"
+      set_fact:
+        sat6_content_view_stats:
           - "Total content views published: {{ content_views_published }}"
           - "Content views published:"
           - "{{ content_views_published_names }}"
@@ -83,7 +84,13 @@
           - "Total content view versions removed: {{ content_views_versions_removed }}"
           - "Content view versions removed:"
           - "{{ content_views_versions_removed_names }}"
-# set uri module defaults to avoid repetitive params
+
+    - name: "Report content view changes"
+      debug:
+        msg: "{{ sat6_content_view_stats }}"
+      when: "sat6_content_view_show_stats | default(True)"
+
+# set uri module on main block, which cascades defaults to all uri module calls, avoiding repetitive params
   module_defaults:
     uri:
       user: "{{ sat6_user }}"

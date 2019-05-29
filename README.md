@@ -12,7 +12,7 @@ An Ansible role to manage publishing and promotion of Satellite6 content views a
 | sat6_max_task_retries | no | Maximum number of attempts at checking a task's status in Satellite 6. Used with `sat6_retry_delay`| "240" | integer |
 | sat6_retry_delay | no | Time to delay in seconds between retrying Satellite6 task status checks.  Used with `sat6_max_task_retries`. For example, `sat6_max_task_retries * sat6_retry_delay / 60 = 120` (1 hour).  This is how long we will wait for a publish, promote, create, delete of a content view to complete.| "30" | integer |
 | sat6_content_views | yes | List of content views to act upon with the role. See the `sat6_content_views - Dictionary fields` section for details.| [] | list of dictionaries |
-
+| sat6_content_view_show_stats | no | Whether or not to display a summary of actions the role completed on your content views | True | boolean |
 
 ### sat6_content_views - Dictionary fields
 | Variable Name | Required | Description | Default Value | Type |
@@ -26,7 +26,7 @@ An Ansible role to manage publishing and promotion of Satellite6 content views a
 | promote_description | no | Description of content view promotion changes during promotion of a content view. When used with a composite content view the underlying content views will be promoted with this description as well if using `components.publish_all: True`.| "" | string |
 | promote_force_yum_metadata_regeneration | no | Whether or not to force yum metadata regeneration while promoting a content view to a lifecycle environment/path. | False | boolean |
 | promote_remove_previous_version | no | Whether or not to remove the previous content view version when promoting a new version of a content view. This requires that you have already promoted versions to all lifecycle environments where the previous version had been promoted (i.e. the previous version cannot still be attached to lifecycle environments).  This restriction is the same whether you utilize the Satellite6 API, UI, or CLI.| False | boolean |
-| keep_content_view_versions_count | no | Number or content view versions to keep.  ***Do not use when specifying `remove_content_view_versions` or `promote_remove_previous_version` as it will probably fail or create semi-unpredictable results.*** | '' | integer |
+| keep_content_view_versions_count | no | Number of content view versions to keep.  ***Do not use when specifying `remove_content_view_versions` or `promote_remove_previous_version` as it will probably fail or create semi-unpredictable results.*** | '' | integer |
 | promote_bypass_environment_path | no | Force promotion to a lifecycle environment/path outside of normal path restrictions (i.e. skip previous paths/environments) | False | boolean |
 | remove_content_view_versions | no | Remove list of specified content view versions, which correspond to the version number ("Version" column of the Satellite6 content view's, "Versions" tab table).  This requires that the requested versions to delete are not associated with any lifecycle environments presently, including `Library`, which is a Satellite6 requirement. If you would like to delete a content view version associated with the `Library` lifecycle environment, remove it from that environment first.| [] | list |
 | components | yes | Settings for composite content views.  ***Required only when*** working with composite content views | n/a | dictionary |
@@ -42,6 +42,11 @@ An Ansible role to manage publishing and promotion of Satellite6 content views a
 | --- | :---: | --- | :---: | --- |
 | name | yes | Name of the content view in the composite content view | n/a | string |
 | version | yes | Version number of the content view in the composite content view to publish the composite content view with | n/a | string |
+
+### Special Statistical Reporting Variable
+| Variable Name | Description | Type |
+| --- | --- | --- |
+| sat6_content_view_stats | A summary of all the actions completed by this role.  This allows for tasks outside of this role, such as a task to send an email notification or log results elsewhere to obtain the summary values. | list |
 
 ## Playbook Example Use-Cases
 ```yaml
