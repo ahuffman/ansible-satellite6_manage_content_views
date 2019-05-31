@@ -38,14 +38,61 @@ galaxy_info:
   platforms:
   - name: "EL"
     versions:
-    - "all"
-  #   - 25
-  # - name: SomePlatform
-  #   versions:
-  #   - all
-  #   - 1.0
-  #   - 7
-  #   - 99.99
+      - "all"
+  - name: "Alpine"
+    versions:
+      - "all"
+  - name: "Amazon"
+    versions:
+      - "all"
+  - name: "ArchLinux"
+    versions:
+      - "all"
+  - name: "ClearLinux"
+    versions:
+      - "all"
+  - name: "Debian"
+    versions:
+      - "all"
+  - name: "DragonFlyBSD"
+    versions:
+      - "all"
+  - name: "Fedora"
+    versions:
+      - "all"
+  - name: "FreeBSD"
+    versions:
+      - "all"
+  - name: "GenericLinux"
+    versions:
+      - "all"
+  - name: "GenericBSD"
+    versions:
+      - "all"
+  - name: "Gentoo"
+    versions:
+      - "all"
+  - name: "HardenedBSD"
+    versions:
+      - "all"
+  - name: "macOS"
+    versions:
+      - "all"
+  - name: "OpenBSD"
+    versions:
+      - "all"
+  - name: "opensuse"
+    versions:
+      - "all"
+  - name: "SLES"
+    versions:
+      - "all"
+  - name: "Solaris"
+    versions:
+      - "all"
+  - name: "Ubuntu"
+    versions:
+      - "all"
 
   galaxy_tags:
     - "katello"
