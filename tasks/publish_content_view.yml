@@ -21,7 +21,7 @@
       set_fact:
         content_view_id: "{{ ccv.cv_id }}"
         content_view_name: "{{ ccv.name }}"
-  when: "content_view_composite"
+  when: "content_view_composite | bool"
 
 - name: "Initiate publishing new content view version of {{ content_view_name }}"
   uri:

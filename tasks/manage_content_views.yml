@@ -35,7 +35,7 @@
         composite_auto_publish: "{{ cv_qry.json.results[0].auto_publish | bool }}"
       vars:
         ccv_comp_jq: "content_view_components[*].{name: content_view.name, cv_id: content_view.id, comp_id: id}"
-      when: "content_view_composite"
+      when: "content_view_composite | bool"
 
 
 # TODO:
