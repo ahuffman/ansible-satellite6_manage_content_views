@@ -1,7 +1,7 @@
 ---
 - name: "Create list of content view version names"
   set_fact:
-    cv_ver_names: "{{ cv_qry.json.results[0] | json_query(cv_ver_names_jq ) | sort(attribute='name',reverse=True) }}"
+    cv_ver_names: "{{ cv_qry.json.results[0] | json_query(cv_ver_names_jq ) | sort(attribute='id',reverse=True) }}"
   vars:
     cv_ver_names_jq: "versions[*].{name: version, id: id}"
 
