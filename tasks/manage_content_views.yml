@@ -49,17 +49,17 @@
 - name: "Publish new content view version"
   include_tasks: "publish_content_view.yml"
   when:
-    - "cv.publish_new_version | default(False)"
-    - "not content_view_composite"
+    - "cv.publish_new_version | default(False) | bool"
+    - "not content_view_composite | bool"
     - "content_view_id != ''"
 
 - name: "Publish new composite content view version"
   include_tasks: "publish_composite_content_view.yml"
   when:
-    - "cv.publish_new_version | default(False)"
-    - "content_view_composite"
+    - "cv.publish_new_version | default(False) | bool"
+    - "content_view_composite | bool"
     - "composite_content_view_id != ''"
-    - "not composite_auto_publish"
+    - "not composite_auto_publish | bool"
 
 - name: "Promote content view to lifecycle environments"
   include_tasks: "promote_content_view.yml"
@@ -69,10 +69,10 @@
 - name: "Remove previous content view version"
   include_tasks: "remove_prev_cv_ver.yml"
   when:
-    - "cv.promote_remove_previous_version | default(False)"
+    - "cv.promote_remove_previous_version | default(False) | bool"
     - "cv.promote_to | default([]) | length > 0" #only delete when we promote
     - "cv_vers | default([]) | length > 1" #make sure we have more than 1 version
-    - "content_view_published"
+    - "content_view_published | bool"
   vars:
     cv_id_jq: "versions[*].id"
     cv_vers: "{{ cv_qry.json.results[0] | json_query(cv_id_jq) }}"
@@ -82,10 +82,10 @@
       - "Not attempting to remove previous content view version for one of the following reasons:"
       - "    A content view was not published during this run"
       - "    There was less than 2 content view versions, so we do not want to try and delete the only one we have."
-  when: (not content_view_published and
-          cv.promote_remove_previous_version | default(False)) or
+  when: (not content_view_published | bool and
+          cv.promote_remove_previous_version | default(False) | bool) or
         (cv_vers | length < 2 and
-          cv.promote_remove_previous_version | default(False))
+          cv.promote_remove_previous_version | default(False) | bool)
   vars:
     cv_id_jq: "versions[*].id"
     cv_vers: "{{ cv_qry.json.results[0] | json_query(cv_id_jq) }}"

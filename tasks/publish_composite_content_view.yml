@@ -16,8 +16,8 @@
         loop_var: "ccv"
         label: "{{ ccv.name }}"
   when:
-    - "cv.components.publish_all | default(False)"
-    - "cv.publish_new_version | default(False))"
+    - "cv.components.publish_all | default(False) | bool"
+    - "cv.publish_new_version | default(False) | bool"
 
 - name: "Publish composite content view with specified versions"
   block:
@@ -34,9 +34,9 @@
       register: "ccv_comp_update"
   when:
     - "cv.components.content_views | default([]) | length > 0"
-    - "not cv.components.publish_all | default(False)"
-    - "cv.publish_new_version"
-    - "not composite_auto_publish" #don't try and publish something that's going to get automatically published on a component content view update
+    - "not cv.components.publish_all | default(False) | bool"
+    - "cv.publish_new_version | bool"
+    - "not composite_auto_publish | bool" #don't try and publish something that's going to get automatically published on a component content view update
 
 - name: "Publish composite content view with latest content view versions"
   block:
@@ -51,7 +51,7 @@
         loop_var: "component"
       register: "ccv_comp_update"
   when:
-    - "cv.publish_new_version"
+    - "cv.publish_new_version | bool"
     - "cv.components.content_views | default([]) | length < 1"
 
 - name: "Publish new composite content view version"
@@ -100,4 +100,4 @@
         composite_content_views_published: "{{ composite_content_views_published | int + 1 }}"
         composite_content_views_published_names: "{{ composite_content_views_published_names | union([cv.name]) }}"
       when: "ccv_publish_qry.json.result == 'success'"
-  when: "not composite_auto_publish" #don't try and publish something that's going to get automatically published on a component content view update
+  when: "not composite_auto_publish | bool" #don't try and publish something that's going to get automatically published on a component content view update

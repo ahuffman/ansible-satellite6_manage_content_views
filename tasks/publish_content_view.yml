@@ -8,7 +8,7 @@
     - name: "Set content view name"
       set_fact:
         content_view_name: "{{ cv.name }}"
-  when: "not content_view_composite"
+  when: "not content_view_composite | bool"
 
 - name: "Composite content view component case"
   block:

@@ -16,7 +16,7 @@
 
         - name: "Update CA trust"
           command: "update-ca-trust"
-      when: "not ca_cert.stat.exists"
+      when: "not ca_cert.stat.exists | bool"
       become: True
 
     - name: "Obtain Satellite6 Organization ID"
@@ -88,7 +88,7 @@
     - name: "Report content view changes"
       debug:
         msg: "{{ sat6_content_view_stats }}"
-      when: "sat6_content_view_show_stats | default(True)"
+      when: "sat6_content_view_show_stats | default(True) | bool"
 
 # set uri module on main block, which cascades defaults to all uri module calls, avoiding repetitive params
   module_defaults:
