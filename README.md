@@ -1,3 +1,5 @@
+![Ansible Role](https://img.shields.io/ansible/role/d/40612)
+
 # ahuffman.satellite6_manage_content_views
 
 An Ansible role to manage publishing and promotion of Satellite6 content views and composite content views.
