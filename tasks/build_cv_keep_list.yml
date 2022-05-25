@@ -13,8 +13,7 @@
   set_fact:
     cv_keep_list: "{{ keep_qry }}"
   vars:
-    keep_count: ":{{ cv.keep_content_view_versions_count }}"
-    keep_qry: "{{ '{{' }} cv_ver_names[{{ keep_count }}] {{ '}}' }}"
+    keep_qry: "{{ cv_ver_names[:cv.keep_content_view_versions_count] }}"
 
 - debug:
     var: "cv_keep_list"
